@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Última vez</title>
+  <link rel="icon" type="image/png" href="icono.png">
+  <link rel="apple-touch-icon" href="icono.png">
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --panel:#12141b;
+      --panel2:#171a22;
+      --text:#e8eaf0;
+      --muted:#a7adbd;
+      --line: rgba(255,255,255,0.10);
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 20% 0%, #141827 0%, #0b0c10 55%, #08090d 100%);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 18px 16px 40px; }
+
+    .top{
+      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
+      flex-wrap:wrap; margin-bottom:14px;
+    }
+    h1{ font-size:26px; line-height:1.1; margin:0; }
+    .sub{ margin:8px 0 0; color:var(--muted); font-size:14px; }
+
+    .top-actions{ display:flex; gap:10px; align-items:center; }
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      font-size: 14px;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.07); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: rgba(80, 140, 255, 0.18);
+      border-color: rgba(80, 140, 255, 0.35);
+    }
+    .btn.primary:hover{ background: rgba(80, 140, 255, 0.25); }
+    .btn.danger{
+      background: rgba(255, 80, 80, 0.14);
+      border-color: rgba(255, 80, 80, 0.32);
+    }
+    .btn.danger:hover{ background: rgba(255, 80, 80, 0.22); }
+    .btn.ghost{ background: transparent; }
+
+    label.file{ display:inline-flex; align-items:center; gap:8px; }
+    label.file input{ display:none; }
+
+    .add, .list{
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .add{ margin: 14px 0; }
+    .add h2, .list h2{ margin: 0 0 10px; font-size: 16px; }
+
+    .add-row{ display:flex; gap:10px; flex-wrap:wrap; }
+    .add-row input{
+      flex: 1 1 220px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      outline: none;
+      font-size: 14px;
+    }
+    .add-row input:focus{ border-color: rgba(80,140,255,0.45); }
+    .hint{ margin:10px 0 0; color:var(--muted); font-size:13px; }
+
+    .list-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+    .small{ color:var(--muted); font-size:13px; }
+
+    .card{
+  position: relative;
+
+  /* NUEVO: la tarjeta se tiñe con el color calculado */
+  border: 1px solid var(--line);
+  border-color: color-mix(in oklab, var(--bar) 55%, rgba(255,255,255,0.12));
+
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bar) 18%, rgba(255,255,255,0.04)) 0%,
+    rgba(255,255,255,0.035) 55%,
+    rgba(255,255,255,0.03) 100%
+  );
+
+  border-radius: 16px;
+  padding: 12px 12px 12px 14px;
+
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.25),
+    0 0 0 1px color-mix(in oklab, var(--bar) 30%, transparent),
+    0 0 22px color-mix(in oklab, var(--bar) 22%, transparent);
+
+  overflow:hidden;
+  cursor:pointer;
+}
+
+.card:hover{
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bar) 26%, rgba(255,255,255,0.05)) 0%,
+    rgba(255,255,255,0.05) 60%,
+    rgba(255,255,255,0.04) 100%
+  );
+}
+
+.card::before{
+  content:"";
+  position:absolute; left:0; top:0; bottom:0;
+  width: 10px;
+  background: var(--bar, rgba(255,255,255,0.12));
+}
+
+.card-top{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+.title{ font-weight:700; font-size:15px; line-height:1.25; }
+
+.meta{
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill{
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.18);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.pill strong{ color: var(--text); }
+
+.card-actions{ display:flex; gap: 8px; align-items:center; }
+.mini{ padding: 8px 10px; border-radius: 12px; font-size: 13px; }
+
+.backdrop{
+  position:fixed; inset:0;
+  background: rgba(0,0,0,0.55);
+  display:flex; align-items:center; justify-content:center;
+  padding: 18px;
+  z-index: 50;
+}
+.hidden{ display:none; }
+
+.modal{
+  width: min(560px, 100%);
+  background: linear-gradient(180deg, rgba(23,26,34,0.98), rgba(18,20,27,0.98));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.modal-head{
+  display:flex; justify-content: space-between; align-items:center;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h3{ margin:0; font-size: 16px; }
+
+.icon{
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  cursor:pointer;
+  font-size: 16px;
+}
+
+.modal-body{
+  padding: 14px;
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field span{
+  display:block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.field input{
+  width:100%;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+  outline:none;
+  font-size: 14px;
+}
+.field input:focus{ border-color: rgba(80,140,255,0.45); }
+
+.row{ display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+.grow{ flex:1; }
+
+.modal-foot{
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <h1>¿Cuándo fue la última vez que…?</h1>
+        <p class="sub">Toca un evento para editar · ✅ Hecho hoy actualiza la fecha · Se guarda en este navegador.</p>
+      </div>
+      <div class="top-actions">
+        <button id="btnExport" class="btn ghost">Exportar</button>
+        <label class="btn ghost file">
+          Importar
+          <input id="fileImport" type="file" accept="application/json" />
+        </label>
+      </div>
+    </header>
+
+    <section class="add">
+      <h2>Añadir evento</h2>
+      <div class="add-row">
+        <input id="newName" type="text" placeholder="Ej: Lavar toallas" maxlength="60" />
+        <input id="newTarget" type="number" placeholder="Objetivo (días) opcional" min="1" max="3650" />
+        <button id="btnAdd" class="btn primary">Añadir</button>
+      </div>
+      <p class="hint">Si dejas el objetivo vacío, el evento solo mostrará “hace X días” (barra neutra).</p>
+    </section>
+
+    <section class="list">
+      <div class="list-head">
+        <h2>Eventos</h2>
+        <div class="small" id="todayLabel"></div>
+      </div>
+      <div id="cards" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- Modal editar -->
+  <div id="modalBackdrop" class="backdrop hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle">Editar evento</h3>
+        <button id="btnClose" class="icon" title="Cerrar" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span>Nombre</span>
+          <input id="editName" type="text" maxlength="60" />
+        </label>
+
+        <label class="field">
+          <span>Objetivo (días) — opcional</span>
+          <input id="editTarget" type="number" min="1" max="3650" placeholder="Vacío = sin objetivo" />
+        </label>
+
+        <label class="field">
+          <span>Última vez</span>
+          <input id="editLast" type="date" />
+        </label>
+
+        <div class="row">
+          <button id="btnDoneToday" class="btn">✅ Hecho hoy</button>
+          <span class="grow"></span>
+          <button id="btnDelete" class="btn danger">Eliminar</button>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <button id="btnCancel" class="btn ghost">Cancelar</button>
+        <button id="btnSave" class="btn primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const STORAGE_KEY = "ultima_vez_events_v1";
+
+    function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+    function todayISO() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function daysBetween(fromISO, toISO) {
+      const from = new Date(fromISO + "T00:00:00");
+      const to = new Date(toISO + "T00:00:00");
+      const ms = to - from;
+      return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+    }
+
+    function uid() {
+      return "e_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+    }
+
+    // Gradiente continuo verde->rojo + se oscurece si te pasas
+    function barColor(dias_pasados, objetivo_dias) {
+      if (!objetivo_dias || objetivo_dias <= 0) return "rgba(255,255,255,0.18)";
+
+      const ratio = dias_pasados / objetivo_dias;
+      const progress = clamp(ratio, 0, 1);      // 0..1
+      const hue = 120 * (1 - progress);         // 120 verde → 0 rojo
+
+      const over = clamp(ratio - 1, 0, 1);      // 0..1 si te pasas (hasta 2x)
+      const light = 46 - 14 * over;             // más tarde → más oscuro
+
+      return `hsl(${hue.toFixed(0)}, 85%, ${light.toFixed(0)}%)`;
+    }
+
+    function urgencyScore(e, today) {
+      if (!e.targetDays) return -1;
+      const d = daysBetween(e.lastDone, today);
+      return d / e.targetDays;
+    }
+
+    function initialEvents() {
+      const t = todayISO();
+      return [
+        { id: uid(), name: "Cambiar sábanas", targetDays: 14, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar baño", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar cristales del baño", targetDays: 30, lastDone: t, createdAt: t },
+        { id: uid(), name: "Limpiar el suelo", targetDays: 7, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar toallas", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar bata", targetDays: 14, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar fular del sofá", targetDays: 30, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar vaqueros azul claro", targetDays: 18, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar vaqueros azul oscuro", targetDays: 18, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar vaqueros negros", targetDays: 18, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Lavar pijama", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Lavar chándal", targetDays: 9, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Cortarse el pelo", targetDays: 40, lastDone: t, createdAt: t },
+        { id: uid(), name: "Cambiar cepillo de dientes", targetDays: 90, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Llamar a Giovanni", targetDays: 7, lastDone: t, createdAt: t },
+        { id: uid(), name: "Llamar a Cande", targetDays: 14, lastDone: t, createdAt: t },
+
+        { id: uid(), name: "Salir de fiesta", targetDays: null, lastDone: t, createdAt: t },
+      ];
+    }
+
+    function loadEvents() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const seed = initialEvents();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+      try {
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) throw new Error("Formato inválido");
+        return arr;
+      } catch {
+        const seed = initialEvents();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+    }
+
+    function saveEvents(events) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // DOM
+    const cardsEl = document.getElementById("cards");
+    const todayLabelEl = document.getElementById("todayLabel");
+
+    const newNameEl = document.getElementById("newName");
+    const newTargetEl = document.getElementById("newTarget");
+    const btnAddEl = document.getElementById("btnAdd");
+
+    const btnExportEl = document.getElementById("btnExport");
+    const fileImportEl = document.getElementById("fileImport");
+
+    const backdropEl = document.getElementById("modalBackdrop");
+    const btnCloseEl = document.getElementById("btnClose");
+    const btnCancelEl = document.getElementById("btnCancel");
+    const btnSaveEl = document.getElementById("btnSave");
+    const btnDeleteEl = document.getElementById("btnDelete");
+    const btnDoneTodayEl = document.getElementById("btnDoneToday");
+
+    const editNameEl = document.getElementById("editName");
+    const editTargetEl = document.getElementById("editTarget");
+    const editLastEl = document.getElementById("editLast");
+
+    let events = loadEvents();
+    let selectedId = null;
+
+    function render() {
+      const t = todayISO();
+      todayLabelEl.textContent = `Hoy: ${t}`;
+
+      const sorted = [...events].sort((a, b) => urgencyScore(b, t) - urgencyScore(a, t));
+      cardsEl.innerHTML = "";
+
+      for (const e of sorted) {
+        const days = daysBetween(e.lastDone, t);
+        const bar = barColor(days, e.targetDays);
+        const ratio = e.targetDays ? (days / e.targetDays) : null;
+
+        const metaBits = [];
+        metaBits.push(`<span class="pill">⏱️ <strong>${days}</strong> días</span>`);
+        if (e.targetDays) metaBits.push(`<span class="pill">🎯 ${e.targetDays} días</span>`);
+        if (ratio !== null) metaBits.push(`<span class="pill">⚡ ${(ratio * 100).toFixed(0)}%</span>`);
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.setProperty("--bar", bar);
+        card.dataset.id = e.id;
+
+        card.innerHTML = `
+          <div class="card-top">
+            <div>
+              <div class="title">${escapeHtml(e.name)}</div>
+              <div class="meta">${metaBits.join("")}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn mini done" data-id="${e.id}" title="Marcar como hecho hoy">✅</button>
+            </div>
+          </div>
+        `;
+
+        cardsEl.appendChild(card);
+      }
+    }
+
+    function openModal(id) {
+      selectedId = id;
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+
+      editNameEl.value = e.name ?? "";
+      editTargetEl.value = (e.targetDays ?? "") === null ? "" : (e.targetDays ?? "");
+      editLastEl.value = e.lastDone ?? todayISO();
+
+      backdropEl.classList.remove("hidden");
+      backdropEl.setAttribute("aria-hidden", "false");
+      editNameEl.focus();
+    }
+
+    function closeModal() {
+      selectedId = null;
+      backdropEl.classList.add("hidden");
+      backdropEl.setAttribute("aria-hidden", "true");
+    }
+
+    function addEvent() {
+      const name = (newNameEl.value || "").trim();
+      const targetRaw = (newTargetEl.value || "").trim();
+
+      if (!name) { alert("Pon un nombre para el evento."); return; }
+
+      let targetDays = null;
+      if (targetRaw) {
+        const n = Number(targetRaw);
+        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo."); return; }
+        targetDays = Math.round(n);
+      }
+
+      const t = todayISO();
+      events.push({ id: uid(), name, targetDays, lastDone: t, createdAt: t });
+
+      saveEvents(events);
+      newNameEl.value = "";
+      newTargetEl.value = "";
+      render();
+    }
+
+    function markDoneToday(id) {
+      const t = todayISO();
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      e.lastDone = t;
+      saveEvents(events);
+      render();
+    }
+
+    function saveEdit() {
+      const e = events.find(x => x.id === selectedId);
+      if (!e) return;
+
+      const name = (editNameEl.value || "").trim();
+      const last = editLastEl.value;
+      const targetRaw = (editTargetEl.value || "").trim();
+
+      if (!name) { alert("El nombre no puede estar vacío."); return; }
+      if (!last) { alert("La fecha de 'última vez' es obligatoria."); return; }
+
+      let targetDays = null;
+      if (targetRaw) {
+        const n = Number(targetRaw);
+        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo (o déjalo vacío)."); return; }
+        targetDays = Math.round(n);
+      }
+
+      e.name = name;
+      e.lastDone = last;
+      e.targetDays = targetDays;
+
+      saveEvents(events);
+      closeModal();
+      render();
+    }
+
+    function deleteSelected() {
+      const e = events.find(x => x.id === selectedId);
+      if (!e) return;
+      if (!confirm(`¿Eliminar "${e.name}"?`)) return;
+
+      events = events.filter(x => x.id !== selectedId);
+      saveEvents(events);
+      closeModal();
+      render();
+    }
+
+    function doneTodaySelected() {
+      if (!selectedId) return;
+      markDoneToday(selectedId);
+      editLastEl.value = todayISO();
+    }
+
+    function exportJSON() {
+      const payload = { exportedAt: new Date().toISOString(), events, version: 1 };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ultima_vez_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importJSON(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(String(reader.result || ""));
+          const arr = Array.isArray(obj) ? obj : obj.events;
+          if (!Array.isArray(arr)) throw new Error("No encuentro 'events'.");
+
+          const normalized = arr.map((x) => ({
+            id: x.id || uid(),
+            name: String(x.name || "").trim() || "Sin nombre",
+            targetDays: (x.targetDays === null || x.targetDays === undefined || x.targetDays === "") ? null : Number(x.targetDays),
+            lastDone: x.lastDone || todayISO(),
+            createdAt: x.createdAt || todayISO(),
+          }));
+
+          events = normalized;
+          saveEvents(events);
+          render();
+          alert("Importación completada.");
+        } catch (err) {
+          alert("No se pudo importar: " + (err?.message || String(err)));
+        } finally {
+          fileImportEl.value = "";
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Wiring
+    btnAddEl.addEventListener("click", addEvent);
+    newNameEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addEvent(); });
+
+    cardsEl.addEventListener("click", (e) => {
+      const target = e.target;
+
+      if (target.classList.contains("done")) {
+        e.stopPropagation();
+        const id = target.dataset.id;
+        markDoneToday(id);
+        return;
+      }
+
+      const card = target.closest(".card");
+      if (card) openModal(card.dataset.id);
+    });
+
+    btnCloseEl.addEventListener("click", closeModal);
+    btnCancelEl.addEventListener("click", closeModal);
+    btnSaveEl.addEventListener("click", saveEdit);
+    btnDeleteEl.addEventListener("click", deleteSelected);
+    btnDoneTodayEl.addEventListener("click", doneTodaySelected);
+
+    backdropEl.addEventListener("click", (e) => { if (e.target === backdropEl) closeModal(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !backdropEl.classList.contains("hidden")) closeModal();
+    });
+
+    btnExportEl.addEventListener("click", exportJSON);
+    fileImportEl.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (file) importJSON(file);
+    });
+
+    // First render
+    render();
+  </script>
+</body>
+</html>
