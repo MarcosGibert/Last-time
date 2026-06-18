@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Última vez</title>
+  <title>Last Time</title>
   <link rel="icon" type="image/png" href="icono.png">
   <link rel="apple-touch-icon" href="icono.png">
   <style>
@@ -89,6 +89,7 @@
 
     .list-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
     .small{ color:var(--muted); font-size:13px; }
+    .cards{ display:grid; gap:10px; }
 
     .card{
   position: relative;
@@ -236,71 +237,71 @@
   <main class="wrap">
     <header class="top">
       <div>
-        <h1>¿Cuándo fue la última vez que…?</h1>
-        <p class="sub">Toca un evento para editar · ✅ Hecho hoy actualiza la fecha · Se guarda en este navegador.</p>
+        <h1>Last Time</h1>
+        <p class="sub">Track the things that quietly slip your mind. Tap a card to edit it, or mark it done today.</p>
       </div>
       <div class="top-actions">
-        <button id="btnExport" class="btn ghost">Exportar</button>
+        <button id="btnExport" class="btn ghost">Export</button>
         <label class="btn ghost file">
-          Importar
+          Import
           <input id="fileImport" type="file" accept="application/json" />
         </label>
       </div>
     </header>
 
     <section class="add">
-      <h2>Añadir evento</h2>
+      <h2>Add a tracker</h2>
       <div class="add-row">
-        <input id="newName" type="text" placeholder="Ej: Lavar toallas" maxlength="60" />
-        <input id="newTarget" type="number" placeholder="Objetivo (días) opcional" min="1" max="3650" />
-        <button id="btnAdd" class="btn primary">Añadir</button>
+        <input id="newName" type="text" placeholder="Example: Clean the fridge" maxlength="60" />
+        <input id="newTarget" type="number" placeholder="Target days, optional" min="1" max="3650" />
+        <button id="btnAdd" class="btn primary">Add</button>
       </div>
-      <p class="hint">Si dejas el objetivo vacío, el evento solo mostrará “hace X días” (barra neutra).</p>
+      <p class="hint">Leave the target empty for things you only want to timestamp, without urgency colors.</p>
     </section>
 
     <section class="list">
       <div class="list-head">
-        <h2>Eventos</h2>
+        <h2>Your trackers</h2>
         <div class="small" id="todayLabel"></div>
       </div>
       <div id="cards" class="cards"></div>
     </section>
   </main>
 
-  <!-- Modal editar -->
+  <!-- Edit modal -->
   <div id="modalBackdrop" class="backdrop hidden" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div class="modal-head">
-        <h3 id="modalTitle">Editar evento</h3>
-        <button id="btnClose" class="icon" title="Cerrar" aria-label="Cerrar">✕</button>
+        <h3 id="modalTitle">Edit tracker</h3>
+        <button id="btnClose" class="icon" title="Close" aria-label="Close">✕</button>
       </div>
 
       <div class="modal-body">
         <label class="field">
-          <span>Nombre</span>
+          <span>Name</span>
           <input id="editName" type="text" maxlength="60" />
         </label>
 
         <label class="field">
-          <span>Objetivo (días) — opcional</span>
-          <input id="editTarget" type="number" min="1" max="3650" placeholder="Vacío = sin objetivo" />
+          <span>Target days, optional</span>
+          <input id="editTarget" type="number" min="1" max="3650" placeholder="Empty = no target" />
         </label>
 
         <label class="field">
-          <span>Última vez</span>
+          <span>Last done</span>
           <input id="editLast" type="date" />
         </label>
 
         <div class="row">
-          <button id="btnDoneToday" class="btn">✅ Hecho hoy</button>
+          <button id="btnDoneToday" class="btn">Done today</button>
           <span class="grow"></span>
-          <button id="btnDelete" class="btn danger">Eliminar</button>
+          <button id="btnDelete" class="btn danger">Delete</button>
         </div>
       </div>
 
       <div class="modal-foot">
-        <button id="btnCancel" class="btn ghost">Cancelar</button>
-        <button id="btnSave" class="btn primary">Guardar</button>
+        <button id="btnCancel" class="btn ghost">Cancel</button>
+        <button id="btnSave" class="btn primary">Save</button>
       </div>
     </div>
   </div>
@@ -308,7 +309,7 @@
   <script>
     "use strict";
 
-    const STORAGE_KEY = "ultima_vez_events_v1";
+    const STORAGE_KEY = "last_time_events_v3";
 
     function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
 
@@ -327,20 +328,29 @@
       return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
     }
 
+    function daysAgoISO(days) {
+      const d = new Date();
+      d.setDate(d.getDate() - days);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
     function uid() {
       return "e_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
     }
 
-    // Gradiente continuo verde->rojo + se oscurece si te pasas
-    function barColor(dias_pasados, objetivo_dias) {
-      if (!objetivo_dias || objetivo_dias <= 0) return "rgba(255,255,255,0.18)";
+    // Continuous green-to-red gradient that darkens after the target is overdue.
+    function barColor(daysElapsed, targetDays) {
+      if (!targetDays || targetDays <= 0) return "rgba(255,255,255,0.18)";
 
-      const ratio = dias_pasados / objetivo_dias;
+      const ratio = daysElapsed / targetDays;
       const progress = clamp(ratio, 0, 1);      // 0..1
-      const hue = 120 * (1 - progress);         // 120 verde → 0 rojo
+      const hue = 120 * (1 - progress);         // 120 green -> 0 red
 
-      const over = clamp(ratio - 1, 0, 1);      // 0..1 si te pasas (hasta 2x)
-      const light = 46 - 14 * over;             // más tarde → más oscuro
+      const over = clamp(ratio - 1, 0, 1);      // 0..1 after target is exceeded, up to 2x
+      const light = 46 - 14 * over;             // later -> darker
 
       return `hsl(${hue.toFixed(0)}, 85%, ${light.toFixed(0)}%)`;
     }
@@ -354,29 +364,23 @@
     function initialEvents() {
       const t = todayISO();
       return [
-        { id: uid(), name: "Cambiar sábanas", targetDays: 14, lastDone: t, createdAt: t },
-        { id: uid(), name: "Limpiar baño", targetDays: 7, lastDone: t, createdAt: t },
-        { id: uid(), name: "Limpiar cristales del baño", targetDays: 30, lastDone: t, createdAt: t },
-        { id: uid(), name: "Limpiar el suelo", targetDays: 7, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Lavar toallas", targetDays: 7, lastDone: t, createdAt: t },
-        { id: uid(), name: "Lavar bata", targetDays: 14, lastDone: t, createdAt: t },
-        { id: uid(), name: "Lavar fular del sofá", targetDays: 30, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Lavar vaqueros azul claro", targetDays: 18, lastDone: t, createdAt: t },
-        { id: uid(), name: "Lavar vaqueros azul oscuro", targetDays: 18, lastDone: t, createdAt: t },
-        { id: uid(), name: "Lavar vaqueros negros", targetDays: 18, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Lavar pijama", targetDays: 7, lastDone: t, createdAt: t },
-        { id: uid(), name: "Lavar chándal", targetDays: 9, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Cortarse el pelo", targetDays: 40, lastDone: t, createdAt: t },
-        { id: uid(), name: "Cambiar cepillo de dientes", targetDays: 90, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Llamar a Giovanni", targetDays: 7, lastDone: t, createdAt: t },
-        { id: uid(), name: "Llamar a Cande", targetDays: 14, lastDone: t, createdAt: t },
-
-        { id: uid(), name: "Salir de fiesta", targetDays: null, lastDone: t, createdAt: t },
+        { id: uid(), name: "Wash gym clothes", targetDays: 3, lastDone: daysAgoISO(4), createdAt: t },
+        { id: uid(), name: "Clean the bathroom", targetDays: 7, lastDone: daysAgoISO(7), createdAt: t },
+        { id: uid(), name: "Water houseplants", targetDays: 5, lastDone: daysAgoISO(5), createdAt: t },
+        { id: uid(), name: "Mop or vacuum floors", targetDays: 7, lastDone: daysAgoISO(5), createdAt: t },
+        { id: uid(), name: "Wash towels", targetDays: 7, lastDone: daysAgoISO(4), createdAt: t },
+        { id: uid(), name: "Change bed sheets", targetDays: 14, lastDone: daysAgoISO(9), createdAt: t },
+        { id: uid(), name: "Clean the kitchen", targetDays: 7, lastDone: daysAgoISO(3), createdAt: t },
+        { id: uid(), name: "Take out recycling", targetDays: 7, lastDone: daysAgoISO(2), createdAt: t },
+        { id: uid(), name: "Wash jeans", targetDays: 14, lastDone: daysAgoISO(8), createdAt: t },
+        { id: uid(), name: "Clean the fridge", targetDays: 30, lastDone: daysAgoISO(18), createdAt: t },
+        { id: uid(), name: "Back up important files", targetDays: 30, lastDone: daysAgoISO(22), createdAt: t },
+        { id: uid(), name: "Review subscriptions", targetDays: 30, lastDone: daysAgoISO(12), createdAt: t },
+        { id: uid(), name: "Call family or a close friend", targetDays: 14, lastDone: daysAgoISO(10), createdAt: t },
+        { id: uid(), name: "Get a haircut", targetDays: 45, lastDone: daysAgoISO(31), createdAt: t },
+        { id: uid(), name: "Change water filter", targetDays: 60, lastDone: daysAgoISO(40), createdAt: t },
+        { id: uid(), name: "Replace toothbrush", targetDays: 90, lastDone: daysAgoISO(48), createdAt: t },
+        { id: uid(), name: "Deep clean one neglected area", targetDays: null, lastDone: daysAgoISO(21), createdAt: t },
       ];
     }
 
@@ -389,7 +393,7 @@
       }
       try {
         const arr = JSON.parse(raw);
-        if (!Array.isArray(arr)) throw new Error("Formato inválido");
+        if (!Array.isArray(arr)) throw new Error("Invalid format");
         return arr;
       } catch {
         const seed = initialEvents();
@@ -438,7 +442,7 @@
 
     function render() {
       const t = todayISO();
-      todayLabelEl.textContent = `Hoy: ${t}`;
+      todayLabelEl.textContent = `Today: ${t}`;
 
       const sorted = [...events].sort((a, b) => urgencyScore(b, t) - urgencyScore(a, t));
       cardsEl.innerHTML = "";
@@ -449,9 +453,9 @@
         const ratio = e.targetDays ? (days / e.targetDays) : null;
 
         const metaBits = [];
-        metaBits.push(`<span class="pill">⏱️ <strong>${days}</strong> días</span>`);
-        if (e.targetDays) metaBits.push(`<span class="pill">🎯 ${e.targetDays} días</span>`);
-        if (ratio !== null) metaBits.push(`<span class="pill">⚡ ${(ratio * 100).toFixed(0)}%</span>`);
+        metaBits.push(`<span class="pill"><strong>${days}</strong> days ago</span>`);
+        if (e.targetDays) metaBits.push(`<span class="pill">Target: ${e.targetDays} days</span>`);
+        if (ratio !== null) metaBits.push(`<span class="pill">${(ratio * 100).toFixed(0)}% due</span>`);
 
         const card = document.createElement("div");
         card.className = "card";
@@ -465,7 +469,7 @@
               <div class="meta">${metaBits.join("")}</div>
             </div>
             <div class="card-actions">
-              <button class="btn mini done" data-id="${e.id}" title="Marcar como hecho hoy">✅</button>
+              <button class="btn mini done" data-id="${e.id}" title="Mark done today">Done</button>
             </div>
           </div>
         `;
@@ -498,12 +502,12 @@
       const name = (newNameEl.value || "").trim();
       const targetRaw = (newTargetEl.value || "").trim();
 
-      if (!name) { alert("Pon un nombre para el evento."); return; }
+      if (!name) { alert("Add a name for the tracker."); return; }
 
       let targetDays = null;
       if (targetRaw) {
         const n = Number(targetRaw);
-        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo."); return; }
+        if (!Number.isFinite(n) || n <= 0) { alert("The target must be a positive number."); return; }
         targetDays = Math.round(n);
       }
 
@@ -533,13 +537,13 @@
       const last = editLastEl.value;
       const targetRaw = (editTargetEl.value || "").trim();
 
-      if (!name) { alert("El nombre no puede estar vacío."); return; }
-      if (!last) { alert("La fecha de 'última vez' es obligatoria."); return; }
+      if (!name) { alert("The name cannot be empty."); return; }
+      if (!last) { alert("The last-done date is required."); return; }
 
       let targetDays = null;
       if (targetRaw) {
         const n = Number(targetRaw);
-        if (!Number.isFinite(n) || n <= 0) { alert("El objetivo debe ser un número positivo (o déjalo vacío)."); return; }
+        if (!Number.isFinite(n) || n <= 0) { alert("The target must be a positive number, or left empty."); return; }
         targetDays = Math.round(n);
       }
 
@@ -555,7 +559,7 @@
     function deleteSelected() {
       const e = events.find(x => x.id === selectedId);
       if (!e) return;
-      if (!confirm(`¿Eliminar "${e.name}"?`)) return;
+      if (!confirm(`Delete "${e.name}"?`)) return;
 
       events = events.filter(x => x.id !== selectedId);
       saveEvents(events);
@@ -575,7 +579,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "ultima_vez_backup.json";
+      a.download = "last_time_backup.json";
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -586,11 +590,11 @@
         try {
           const obj = JSON.parse(String(reader.result || ""));
           const arr = Array.isArray(obj) ? obj : obj.events;
-          if (!Array.isArray(arr)) throw new Error("No encuentro 'events'.");
+          if (!Array.isArray(arr)) throw new Error("Could not find an events array.");
 
           const normalized = arr.map((x) => ({
             id: x.id || uid(),
-            name: String(x.name || "").trim() || "Sin nombre",
+            name: String(x.name || "").trim() || "Untitled tracker",
             targetDays: (x.targetDays === null || x.targetDays === undefined || x.targetDays === "") ? null : Number(x.targetDays),
             lastDone: x.lastDone || todayISO(),
             createdAt: x.createdAt || todayISO(),
@@ -599,9 +603,9 @@
           events = normalized;
           saveEvents(events);
           render();
-          alert("Importación completada.");
+          alert("Import completed.");
         } catch (err) {
-          alert("No se pudo importar: " + (err?.message || String(err)));
+          alert("Could not import: " + (err?.message || String(err)));
         } finally {
           fileImportEl.value = "";
         }
