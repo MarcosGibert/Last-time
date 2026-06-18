@@ -83,6 +83,3 @@ This project was built as a lightweight personal utility for remembering irregul
 - Add search or filters for larger tracker lists.
 - Add optional browser notifications for overdue tasks.
 - Add a reset-to-defaults action.
-- Add mobile install support with a web app manifest.
-- Add tests for date calculations, sorting, import, and export.
-
