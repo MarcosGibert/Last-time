@@ -42,24 +42,6 @@ These are only starter examples. Users can edit, delete, import, export, or add 
 - CSS
 - JavaScript
 
-## Running Locally
-
-Clone the repository and open `index.html` in a browser:
-
-```bash
-git clone https://github.com/MarcosGibert/Last-time.git
-cd Last-time
-open index.html
-```
-
-You can also serve the folder locally:
-
-```bash
-python3 -m http.server 8000
-```
-
-Then visit `http://localhost:8000`.
-
 ## How It Works
 
 Each tracker has a name, a last-done date, and an optional target interval. The app calculates the number of days since the last-done date, compares it with the target interval, and uses that ratio to sort and color the cards.
